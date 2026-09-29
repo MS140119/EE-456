@@ -7,7 +7,9 @@ Original file is located at
     https://colab.research.google.com/drive/1_RdshvTR6GyrGOqgA0SDStJuqm1Spjw5
 """
 
-import os, json, time
+import os
+import json
+import time
 from typing import Dict, Any, Optional
 import numpy as np
 import pandas as pd
@@ -15,13 +17,17 @@ import matplotlib.pyplot as plt
 
 # ===== constants =====
 UCI_URL = "https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data"
-REQUIRED_COLS = ["sepal_length", "sepal_width", "petal_length", "petal_width", "species"]
+REQUIRED_COLS = ["sepal_length", "sepal_width",
+                 "petal_length", "petal_width", "species"]
 NUM_COLS = ["sepal_length", "sepal_width", "petal_length", "petal_width"]
 
 # ===== logging / utils =====
+
+
 def log(msg: str, initials: str, student_id: str) -> None:
     """Print a timestamped message tagged with student initials and 9-digit ID."""
     print(f"[{time.strftime('%H:%M:%S')}] [{initials}-{student_id}] {msg}")
+
 
 def ensure_dir(path: str) -> None:
     """Create directory if it does not exist."""
@@ -51,7 +57,8 @@ class IrisLoaderUCI:
           - proportions = counts / total, rounded to 6 decimals.
           - Return dict: {"total": int, "counts": {class: int}, "proportions": {class: float}}.
         """
-        raise NotImplementedError("Implement IrisLoaderUCI.check_class_balance")
+        raise NotImplementedError(
+            "Implement IrisLoaderUCI.check_class_balance")
 
     def save_head(self, k: int = 10, out_csv: str = "./outputs/head.csv", seed: int = None) -> None:
         """
@@ -103,8 +110,6 @@ class Processor:
         """
         raise NotImplementedError("Implement Processor.stats")
 
-
-
     def train_val_split(self, val_ratio: float = 0.2, seed=0) -> Dict[str, Any]:
         """
         TODO:
@@ -115,7 +120,6 @@ class Processor:
           - Return {"train_size": int, "val_size": int}
         """
         raise NotImplementedError("Implement Processor.train_val_split")
-
 
     def plot_hist(self, col: str = "petal_length", out: str = "./outputs/hist_petal_length.png") -> None:
         """
@@ -157,7 +161,8 @@ class Processor:
 def main(initials: str, student_id: str, seed: int = 0, val_ratio: float = 0.2, uci_url: str = UCI_URL):
     # Validate ID format (exactly 9 digits)
     if not (isinstance(student_id, str) and student_id.isdigit() and len(student_id) == 9):
-        raise ValueError("student_id must be a string of exactly 9 digits, e.g., '202312345'.")
+        raise ValueError(
+            "student_id must be a string of exactly 9 digits, e.g., '202312345'.")
 
     ensure_dir("./outputs")  # must be called exactly once
     log(f"Reading UCI CSV: {uci_url}", initials, student_id)
@@ -178,7 +183,7 @@ def main(initials: str, student_id: str, seed: int = 0, val_ratio: float = 0.2, 
     proc.add_numeric_label("./outputs/label_map.json")
     log("Added numeric label & saved label_map.json", initials, student_id)
 
-    split_info = proc.train_val_split(val_ratio=val_ratio,seed = seed)
+    split_info = proc.train_val_split(val_ratio=val_ratio, seed=seed)
     log(f"Split: {split_info}", initials, student_id)
 
     stats = proc.stats()
@@ -188,7 +193,8 @@ def main(initials: str, student_id: str, seed: int = 0, val_ratio: float = 0.2, 
 
     proc.plot_hist("petal_length", "./outputs/hist_petal_length.png")
     proc.plot_label_bar("./outputs/label_bar.png")
-    proc.plot_scatter("petal_length", "petal_width", out="./outputs/scatter_petal.png")
+    proc.plot_scatter("petal_length", "petal_width",
+                      out="./outputs/scatter_petal.png")
     log("Saved plots", initials, student_id)
 
     proc.save_processed("./outputs/processed.csv")
@@ -197,4 +203,4 @@ def main(initials: str, student_id: str, seed: int = 0, val_ratio: float = 0.2, 
 
 if __name__ == "__main__":
     # === TODO: replace with your own initials and 9-digit student ID,seed
-    main(initials="AB", student_id="123456789",seed=0)
+    main(initials="AB", student_id="123456789", seed=0)
