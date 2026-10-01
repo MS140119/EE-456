@@ -41,15 +41,28 @@ class IrisLoaderUCI:
         self.df: Optional[pd.DataFrame] = None
 
     def load(self) -> pd.DataFrame:
+        df = pd.read_csv(self.url, header=None, names=REQUIRED_COLS,
+                         skip_blank_lines=True)  # reading from data file
+        self.df = df  # setting the data file to self.df object
+        return self.df  # returning object
+
         """
         TODO:
-          - Read CSV from self.url with header=None and names=REQUIRED_COLS.
+          - Read CSV from self.url with header=None andnames=REQUIRED_COLS.
           - Drop empty rows.
           - Set self.df and return it.
         """
         raise NotImplementedError("Implement IrisLoaderUCI.load")
 
     def check_class_balance(self) -> Dict[str, Any]:
+        class_count = self.df["species"].value_counts().sort_index()
+        total = len(self.df)
+        count = {}
+        proportions = {}
+        for key, value in class_count.items():
+            count[key] = int(value)
+            proportions[key] = round((value/total), 6)
+        return {"total": total, "counts": count, "proportions": proportions}
         """
         TODO:
           - Compute per-class counts for 'species'.
@@ -61,6 +74,8 @@ class IrisLoaderUCI:
             "Implement IrisLoaderUCI.check_class_balance")
 
     def save_head(self, k: int = 10, out_csv: str = "./outputs/head.csv", seed: int = None) -> None:
+
+        
         """
         TODO:
 
@@ -203,4 +218,5 @@ def main(initials: str, student_id: str, seed: int = 0, val_ratio: float = 0.2, 
 
 if __name__ == "__main__":
     # === TODO: replace with your own initials and 9-digit student ID,seed
-    main(initials="AB", student_id="123456789", seed=0)
+     student_id = "968892796"
+    main(initials="MS", student_id=student_id, seed=int(student_id[-2:]))
