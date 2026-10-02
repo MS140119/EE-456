@@ -46,14 +46,6 @@ class IrisLoaderUCI:
         self.df = df  # setting the data file to self.df object
         return self.df  # returning object
 
-        """
-        TODO:
-          - Read CSV from self.url with header=None andnames=REQUIRED_COLS.
-          - Drop empty rows.
-          - Set self.df and return it.
-        """
-        raise NotImplementedError("Implement IrisLoaderUCI.load")
-
     def check_class_balance(self) -> Dict[str, Any]:
         class_count = self.df["species"].value_counts().sort_index()
         total = len(self.df)
@@ -63,34 +55,21 @@ class IrisLoaderUCI:
             count[key] = int(value)
             proportions[key] = round((value/total), 6)
         return {"total": total, "counts": count, "proportions": proportions}
-        """
-        TODO:
-          - Compute per-class counts for 'species'.
-          - total = number of rows.
-          - proportions = counts / total, rounded to 6 decimals.
-          - Return dict: {"total": int, "counts": {class: int}, "proportions": {class: float}}.
-        """
-        raise NotImplementedError(
-            "Implement IrisLoaderUCI.check_class_balance")
 
     def save_head(self, k: int = 10, out_csv: str = "./outputs/head.csv", seed: int = None) -> None:
 
-        
-        """
-        TODO:
-
-          - Use the last two digits of `student_id` as the random seed. (e.g student_id = 202312345 -> seed = 45)
-          - Deterministically shuffle the DataFrame (use the provided seed).
-          - Take the first k rows and save to out_csv without index.
-        """
-        raise NotImplementedError("Implement IrisLoaderUCI.save_head")
+        # deterministically shuffle the DataFrame
+        shuffled_df = self.df.sample(frac=1, random_state=seed)
+        # get the first k row of the shuffled dataframe
+        head_df = shuffled_df.head(k)
+        # save the first k rows to CSV without index
+        head_df.to_csv(out_csv, index=False)
+        return  # successfully saved the head of the DataFrame
 
     def save_class_balance(self, out_json: str = "./outputs/class_balance.json") -> None:
-        """
-        TODO:
-          - Call check_class_balance() and save the resulting dict as JSON to out_json.
-        """
-        raise NotImplementedError("Implement IrisLoaderUCI.save_class_balance")
+        class_balance = self.check_class_balance()
+        with open(out_json, "w") as f:  # open file in write mode
+            json.dump(class_balance, f)  # dumping class balance to JSON file
 
 
 # ===== processor (implementations required) =====
@@ -99,77 +78,77 @@ class Processor:
         self.df = df.copy()
 
     def add_numeric_label(self, out_map: str = "./outputs/label_map.json") -> None:
-        """
-        TODO:
-          - From self.df["species"], build alphabetical class list and mapping to integers {0..K-1}.
-          - Create self.df["label"] via the mapping.
-          - Save the mapping dict to JSON at out_map.
-        """
-        raise NotImplementedError("Implement Processor.add_numeric_label")
+
+        species = self.df["species"].sort_values(
+        ).tolist()  # sort species alphabetically
+        # create a dictionary to map species to numeric labels
+        label_map = {v: i for i, v in enumerate(sorted(set(species)))}
+        # add numeric label column based on the mapping
+        self.df["label"] = self.df["species"].map(label_map)
+        with open(out_map, "w") as f:  # dump to JSON file
+            json.dump(label_map, f)
 
     def stats(self) -> Dict[str, Any]:
-        """
-        TODO:
-          - For each col in NUM_COLS, compute:
-              * min
-              * max
-              * mean
-              * median
-              * std
-          - Return dict in the form:
-              {
-                  "sepal_length": {"min":..., "max":..., "mean":..., "median":..., "std":...},
-                  "sepal_width": {...},
-                  ...
-              }
-        """
-        raise NotImplementedError("Implement Processor.stats")
+        stats_dict = {}
+        for col in NUM_COLS:
+            stats_dict[col] = {
+                "min": self.df[col].min(),
+                "max": self.df[col].max(),
+                "mean": self.df[col].mean(),
+                "median": self.df[col].median(),
+                "std": self.df[col].std()
+            }
+        return stats_dict
 
     def train_val_split(self, val_ratio: float = 0.2, seed=0) -> Dict[str, Any]:
-        """
-        TODO:
-          - Shuffle and split the DataFrame.
-          - Validation size = round(n * val_ratio), clamp so both sets are >= 1 row.
-          - First part = val set, remaining = train set.
-          - Save to ./outputs/train.csv and ./outputs/val.csv (no index).
-          - Return {"train_size": int, "val_size": int}
-        """
-        raise NotImplementedError("Implement Processor.train_val_split")
+
+        # deterministically shuffle the DataFrame
+        shuffled_df = self.df.sample(frac=1, random_state=seed)
+        n = len(shuffled_df)  # total number of rows in the shuffled DataFrame
+        # number of validation rows, clamped to at least 1
+        n_val = max(1, min(round(n * val_ratio), n - 1))
+        validation_shuffle = shuffled_df.iloc[:n_val]
+        train_shuffle = shuffled_df.iloc[n_val:]
+        train_shuffle.to_csv("./outputs/train.csv", index=False)
+        validation_shuffle.to_csv("./outputs/val.csv", index=False)
+
+        return {"train_size": len(train_shuffle), "val_size": len(validation_shuffle)}
 
     def plot_hist(self, col: str = "petal_length", out: str = "./outputs/hist_petal_length.png") -> None:
-        """
-        TODO:
-          - Make a histogram with 20 bins for column `col`.
-          - Add title/xlabel/ylabel, tight_layout, save to `out` at dpi=150, then close the figure.
-        """
-        raise NotImplementedError("Implement Processor.plot_hist")
+        # create histogram for the specified column
+        plt.hist(self.df[col], bins=20)
+        plt.title(f"Histogram of {col}")
+        plt.xlabel(col)
+        plt.ylabel("Frequency")
+        plt.tight_layout()
+        plt.savefig(out, dpi=150)
+        plt.close()
 
     def plot_label_bar(self, out: str = "./outputs/label_bar.png") -> None:
-        """
-        TODO:
-          - Create a bar chart of species counts (include NaN if any; sort by class name).
-          - Add title/xlabel/ylabel, tight_layout, save to `out` at dpi=150, then close the figure.
-        """
-        raise NotImplementedError("Implement Processor.plot_label_bar")
+        # include NaN if any, sort by class name
+        counts = self.df["species"].value_counts(dropna=False).sort_index()
+        plt.bar(counts.index.astype(str), counts.values)
+        plt.title("Species Counts")
+        plt.xlabel("Species")
+        plt.ylabel("Count")
+        plt.tight_layout()
+        plt.savefig(out, dpi=150)
+        plt.close()
 
     def plot_scatter(self, x: str = "petal_length", y: str = "petal_width",
                      color_by: str = "species", out: str = "./outputs/scatter_petal.png") -> None:
-        """
-        TODO:
-          - For each group in self.df grouped by `color_by` (include NaN group if any),
-            plot a scatter of x vs y with a legend.
-          - Add title/xlabel/ylabel, tight_layout, save to `out` at dpi=150, then close the figure.
-        Preconditions:
-          - Columns x, y, color_by exist in self.df.
-        """
-        raise NotImplementedError("Implement Processor.plot_scatter")
+        for group_name, group_df in self.df.groupby(color_by, dropna=False):
+            plt.scatter(group_df[x], group_df[y], label=str(group_name))
+        plt.title(f"Scatter of {x} vs {y} colored by {color_by}")
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(out, dpi=150)
+        plt.close()
 
     def save_processed(self, out_csv: str = "./outputs/processed.csv") -> None:
-        """
-        TODO:
-          - Save the full processed DataFrame to out_csv without index.
-        """
-        raise NotImplementedError("Implement Processor.save_processed")
+        self.df.to_csv(out_csv, index=False)
 
 
 # ===== main driver (edit initials/ID,seed) =====
@@ -218,5 +197,5 @@ def main(initials: str, student_id: str, seed: int = 0, val_ratio: float = 0.2, 
 
 if __name__ == "__main__":
     # === TODO: replace with your own initials and 9-digit student ID,seed
-     student_id = "968892796"
-    main(initials="MS", student_id=student_id, seed=int(student_id[-2:]))
+
+    main(initials="MS", student_id="968892796", seed=int("968892796"[-2:]))
